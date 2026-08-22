@@ -1,11 +1,21 @@
 import React from 'react';
 import { SectionHeading } from '../ui/SectionHeading';
-import { CATEGORIES } from '../../data/mockData';
+import { useEffect, useState } from 'react';
+import { getCategories } from '../../data/source';
+import type { Category } from '../../types';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { RevealOnScroll } from '../ui/RevealOnScroll';
 
 export const CategoriesGrid: React.FC = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    getCategories().then((c) => alive && setCategories(c));
+    return () => { alive = false; };
+  }, []);
+
   return (
     <section className="py-24 px-6 bg-black relative overflow-hidden">
       {/* Ambient Glow */}
@@ -25,7 +35,7 @@ export const CategoriesGrid: React.FC = () => {
 
         {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 auto-rows-[240px] gap-5">
-          {CATEGORIES.map((cat, index) => {
+          {categories.map((cat, index) => {
             // Determine span classes
             let spanClass = "";
             if (index === 0) spanClass = "md:col-span-2 md:row-span-2"; // First Item: Large Square

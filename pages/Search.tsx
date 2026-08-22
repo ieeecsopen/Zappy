@@ -4,21 +4,14 @@ import { Footer } from '../components/Footer';
 import { Search as SearchIcon, MapPin, ArrowRight, TrendingUp, Mic, X, Clock, Loader2 } from 'lucide-react';
 import { MediaCard } from '../components/ui/MediaCard';
 import { CardSkeleton } from '../components/ui/Skeleton';
-import { PLACES_DATA } from '../data/mockData';
+import { getAllPlaces, searchPlaces } from '../data/source';
 import { RevealOnScroll } from '../components/ui/RevealOnScroll';
 import { Place } from '../types';
 
 const RECENT_SEARCHES_KEY = 'zappy_recent_searches';
 const MAX_RECENT_SEARCHES = 5;
 
-// Flatten all places for searching
-const ALL_PLACES: Place[] = [
-    ...PLACES_DATA.hotels,
-    ...PLACES_DATA.restaurants,
-    ...PLACES_DATA.cafes,
-    ...PLACES_DATA.education,
-    ...PLACES_DATA.attractions,
-];
+
 
 export const Search: React.FC = () => {
     const [query, setQuery] = useState('');
@@ -48,16 +41,24 @@ export const Search: React.FC = () => {
     };
 
     // Autocomplete suggestions based on query
+    const [allPlaces, setAllPlaces] = useState<Place[]>([]);
+
+    useEffect(() => {
+        let alive = true;
+        getAllPlaces().then((ps) => alive && setAllPlaces(ps));
+        return () => { alive = false; };
+    }, []);
+
     const suggestions = useMemo(() => {
         if (!query.trim() || query.length < 2) return [];
         const lowerQuery = query.toLowerCase();
-        return ALL_PLACES
+        return allPlaces
             .filter(p =>
                 p.title.toLowerCase().includes(lowerQuery) ||
                 p.category.toLowerCase().includes(lowerQuery)
             )
             .slice(0, 5);
-    }, [query]);
+    }, [query, allPlaces]);
 
     // Handle search
     const handleSearch = async () => {
@@ -71,15 +72,7 @@ export const Search: React.FC = () => {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        const lowerQuery = query.toLowerCase();
-        const lowerLocation = location.toLowerCase();
-
-        const filtered = ALL_PLACES.filter(p => {
-            const matchesQuery = p.title.toLowerCase().includes(lowerQuery) ||
-                p.category.toLowerCase().includes(lowerQuery);
-            const matchesLocation = !lowerLocation || p.location.toLowerCase().includes(lowerLocation);
-            return matchesQuery && matchesLocation;
-        });
+        const filtered = await searchPlaces(query, location);
 
         setResults(filtered);
         setIsLoading(false);
@@ -334,7 +327,7 @@ export const Search: React.FC = () => {
                         </div>
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {ALL_PLACES.slice(0, 3).map(place => (
+                            {allPlaces.slice(0, 3).map(place => (
                                 <Link to={`/place/${place.id}`} key={place.id}>
                                     <MediaCard
                                         place={place}
