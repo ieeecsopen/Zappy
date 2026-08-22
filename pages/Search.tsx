@@ -61,7 +61,9 @@ export const Search: React.FC = () => {
 
     // Handle search
     const handleSearch = async () => {
-        if (!query.trim()) return;
+        // An empty query is a valid search: "show me everything" (location may
+        // still narrow it). Only a fully empty form is ignored.
+        if (!query.trim() && !location.trim()) return;
 
         setIsLoading(true);
         setHasSearched(true);
