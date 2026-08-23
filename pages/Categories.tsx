@@ -1,13 +1,23 @@
 import React from 'react';
 
 import { Footer } from '../components/Footer';
-import { CATEGORIES } from '../data/mockData';
+import { useEffect, useState } from 'react';
+import { getCategories } from '../data/source';
+import type { Category } from '../types';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { RevealOnScroll } from '../components/ui/RevealOnScroll';
 
 export const Categories: React.FC = () => {
+    const [categories, setCategories] = useState<Category[]>([]);
+
+    useEffect(() => {
+        let alive = true;
+        getCategories().then((c) => alive && setCategories(c));
+        return () => { alive = false; };
+    }, []);
+
     return (
         <div className="min-h-screen bg-black flex flex-col relative">
             {/* Header removed */}
@@ -24,7 +34,7 @@ export const Categories: React.FC = () => {
                 </div>
 
                 <RevealOnScroll className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" delay={100}>
-                    {CATEGORIES.map((cat) => (
+                    {categories.map((cat) => (
                         <Link
                             to={`/category/${cat.slug}`}
                             key={cat.id}

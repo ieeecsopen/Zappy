@@ -1,7 +1,9 @@
 
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { PLACES_DATA, CATEGORIES } from '../data/mockData';
+import { useEffect, useState } from 'react';
+import { getPlace, getPlaces } from '../data/source';
+import type { Category, Place } from '../types';
 
 import { Footer } from '../components/Footer';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
@@ -10,20 +12,31 @@ import { MapPin, Star, Clock, Globe, Phone, Share2, Heart, CheckCircle2, ArrowLe
 const PlaceDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const [place, setPlace] = useState<Place | null>(null);
+    const [placeCategory, setPlaceCategory] = useState<Category | undefined>();
+    const [related, setRelated] = useState<Place[]>([]);
+    const [loaded, setLoaded] = useState(false);
 
     // Find place across all categories
-    let place = null;
-    let placeCategory = null;
+    useEffect(() => {
+        let alive = true;
+        setLoaded(false);
+        getPlace(id ?? '').then((hit) => {
+            if (!alive) return;
+            if (hit) {
+                setPlace(hit.place);
+                setPlaceCategory(hit.category);
+                getPlaces(hit.category?.slug ?? 'hotels').then((ps) => {
+                    if (alive) setRelated(ps.filter((p) => p.id !== hit.place.id).slice(0, 3));
+                });
+            }
+            setLoaded(true);
+        });
+        return () => { alive = false; };
+    }, [id]);
 
-    Object.keys(PLACES_DATA).forEach(key => {
-        const found = PLACES_DATA[key].find(p => p.id === id);
-        if (found) {
-            place = found;
-            placeCategory = CATEGORIES.find(c => c.slug === key);
-        }
-    });
-
-    if (!place) return <div>Place not found</div>;
+    if (loaded && !place) return <div>Place not found</div>;
+    if (!place) return null;
 
     const breadcrumbItems = [
         { label: 'Categories', href: '/categories' },
@@ -223,17 +236,14 @@ const PlaceDetail: React.FC = () => {
             <div className="max-w-[1400px] mx-auto px-6 pb-24">
                 <h2 className="text-3xl font-bold mb-8">You Might Also Like</h2>
                 <div className="grid md:grid-cols-3 gap-6">
-                    {PLACES_DATA[placeCategory?.slug || 'hotels']
-                        .filter(p => p.id !== place?.id)
-                        .slice(0, 3)
-                        .map(related => (
-                            <Link to={`/place/${related.id}`} key={related.id} className="block group">
+                    {related.map(rel => (
+                            <Link to={`/place/${rel.id}`} key={rel.id} className="block group">
                                 <div className="relative h-[240px] rounded-2xl overflow-hidden mb-4">
-                                    <img src={related.image} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                    <img src={rel.image} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                     <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
                                 </div>
-                                <h3 className="font-bold text-lg mb-1">{related.title}</h3>
-                                <p className="text-gray-500 text-sm">{related.location}</p>
+                                <h3 className="font-bold text-lg mb-1">{rel.title}</h3>
+                                <p className="text-gray-500 text-sm">{rel.location}</p>
                             </Link>
                         ))
                     }

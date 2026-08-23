@@ -1,7 +1,8 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { CATEGORIES, PLACES_DATA } from '../data/mockData';
+import { getCategories, getPlaces } from '../data/source';
+import type { Category, Place } from '../types';
 
 import { Footer } from '../components/Footer';
 import { MediaCard } from '../components/ui/MediaCard';
@@ -14,8 +15,19 @@ const ITEMS_PER_PAGE = 8;
 export const CategoryListing: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
-    const category = CATEGORIES.find(c => c.slug === slug);
-    const places = slug && PLACES_DATA[slug] ? PLACES_DATA[slug] : [];
+    const [category, setCategory] = useState<Category | undefined>();
+    const [places, setPlaces] = useState<Place[]>([]);
+
+    useEffect(() => {
+        let alive = true;
+        getCategories().then((cats) => {
+            if (alive) setCategory(cats.find(c => c.slug === slug));
+        });
+        if (slug) {
+            getPlaces(slug).then((ps) => alive && setPlaces(ps));
+        }
+        return () => { alive = false; };
+    }, [slug]);
     const [priceFilter, setPriceFilter] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
