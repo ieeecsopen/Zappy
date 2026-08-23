@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Footer } from '../components/Footer';
-import { Search as SearchIcon, MapPin, ArrowRight, TrendingUp, Mic, X, Clock, Loader2 } from 'lucide-react';
+import { useSavedPlaces } from '../hooks/useSavedPlaces';
+import { Search as SearchIcon, MapPin, ArrowRight, TrendingUp, Mic, X, Clock, Loader2, Heart } from 'lucide-react';
 import { MediaCard } from '../components/ui/MediaCard';
 import { CardSkeleton } from '../components/ui/Skeleton';
 import { PLACES_DATA } from '../data/mockData';
@@ -23,6 +24,7 @@ const ALL_PLACES: Place[] = [
 export const Search: React.FC = () => {
     const [query, setQuery] = useState('');
     const [location, setLocation] = useState('');
+    const { isSaved, toggleSaved } = useSavedPlaces();
     const [isLoading, setIsLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const [results, setResults] = useState<Place[]>([]);
@@ -310,13 +312,26 @@ export const Search: React.FC = () => {
                         {!isLoading && results.length > 0 && (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {results.map(place => (
-                                    <Link to={`/place/${place.id}`} key={place.id}>
-                                        <MediaCard
-                                            place={place}
-                                            variant="light"
-                                            className="h-full hover:shadow-xl transition-shadow"
-                                        />
-                                    </Link>
+                                    <div key={place.id} className="relative">
+                                        <Link to={`/place/${place.id}`}>
+                                            <MediaCard
+                                                place={place}
+                                                variant="light"
+                                                className="h-full hover:shadow-xl transition-shadow"
+                                            />
+                                        </Link>
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                toggleSaved(place);
+                                            }}
+                                            aria-label={isSaved(place.id) ? `Remove ${place.title} from saved places` : `Save ${place.title}`}
+                                            aria-pressed={isSaved(place.id)}
+                                            className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-white/90 backdrop-blur-sm shadow-md hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <Heart size={18} className={isSaved(place.id) ? 'text-red-500 fill-red-500' : 'text-gray-400'} />
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -335,13 +350,26 @@ export const Search: React.FC = () => {
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {ALL_PLACES.slice(0, 3).map(place => (
-                                <Link to={`/place/${place.id}`} key={place.id}>
-                                    <MediaCard
-                                        place={place}
-                                        variant="light"
-                                        className="h-full hover:shadow-xl transition-shadow"
-                                    />
-                                </Link>
+                                <div key={place.id} className="relative">
+                                    <Link to={`/place/${place.id}`}>
+                                        <MediaCard
+                                            place={place}
+                                            variant="light"
+                                            className="h-full hover:shadow-xl transition-shadow"
+                                        />
+                                    </Link>
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            toggleSaved(place);
+                                        }}
+                                        aria-label={isSaved(place.id) ? `Remove ${place.title} from saved places` : `Save ${place.title}`}
+                                        aria-pressed={isSaved(place.id)}
+                                        className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-white/90 backdrop-blur-sm shadow-md hover:bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <Heart size={18} className={isSaved(place.id) ? 'text-red-500 fill-red-500' : 'text-gray-400'} />
+                                    </button>
+                                </div>
                             ))}
                         </div>
                     </RevealOnScroll>
